@@ -31,3 +31,37 @@ const handler = (req: Request): Response => {
   });
 }
 serve(handler)
+
+// frontend
+
+// admin page, login component
+// login => fetch server with user/pass => server checks hashed password to unhashed password => server returns token
+// token is stored in local storage
+// token is used to fetch data from server
+
+// admin page, orders component
+// show all currently open orders
+// can view one order, edit mode is for store component, can share order by qr-code to check
+// can create new order
+// can close order
+
+// admin page, store component
+// menu with dishes, can add dishes to order
+// starts with empty order, specify name of customer
+
+// check page
+// show dishes of check and status = inprogress | payed | completed
+
+// backend
+
+// /login - POST: try to login
+// /register - POST: update credentials to access /login POST
+// /check/:id - GET: check if bill exist
+// /checks?status=[#all, completed, inprogress, payed] - GET: return all checks with status or query by status
+// /checks/:day - GET: return checks by id of day
+
+// general
+
+// do not show anywhere "buy" or "pay" texts or buttons, only "order" or "complete"
+
+// todo: add storage component for admin, to specify dishes and their supply. Validate in store component if dish is available
