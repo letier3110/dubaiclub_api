@@ -3,9 +3,9 @@ import { serve } from 'https://deno.land/std@0.155.0/http/server.ts'
 import * as bcrypt from 'https://deno.land/x/bcrypt/mod.ts'
 import 'https://deno.land/x/xhr@0.1.1/mod.ts'
 import { installGlobals } from 'https://deno.land/x/virtualstorage@0.1.0/mod.ts'
-import firebase from 'https://cdn.skypack.dev/firebase@8.7.0/app'
-import 'https://cdn.skypack.dev/firebase@8.7.0/auth'
-import 'https://cdn.skypack.dev/firebase@8.7.0/firestore'
+import { initializeApp } from 'https://cdn.skypack.dev/firebase@9.17.1/app'
+import { getAuth } from 'https://cdn.skypack.dev/firebase@9.17.1/auth'
+import { getFirestore } from 'https://cdn.skypack.dev/firebase@9.17.1/firestore'
 import { Application, Router, Status } from 'https://deno.land/x/oak@v7.7.0/mod.ts'
 import { virtualStorage } from 'https://deno.land/x/virtualstorage@0.1.0/middleware.ts'
 installGlobals()
@@ -14,11 +14,9 @@ const configEnv = Deno.env.get('FIREBASE_CONFIG')
 
 if (configEnv) {
   const firebaseConfig = JSON.parse(configEnv ?? '{}')
-  const firebaseApp = firebase.initializeApp(firebaseConfig, 'dubaiclub-2f11d')
-  // @ts-ignore
-  const auth = firebase.auth(firebaseApp)
-  // @ts-ignore
-  const db = firebase.firestore(firebaseApp)
+  const firebaseApp = initializeApp(firebaseConfig, 'dubaiclub-2f11d')
+  const auth = getAuth(firebaseApp)
+  const db = getFirestore(firebaseApp)
 
   const users = new Map()
 
