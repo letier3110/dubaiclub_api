@@ -32,7 +32,7 @@ if (FIREBASE_CONFIG) {
       ctx.response.status = Status.Unauthorized
       return
     }
-    const queryRef = collection(db, 'orders')
+    const queryRef = collection(db, 'check')
     const sampleData = await getDocs(queryRef).then((querySnapshot) => {
       const data = querySnapshot.docs.map((x) => x.data())
       return data
@@ -49,7 +49,7 @@ if (FIREBASE_CONFIG) {
     //   return
     // }
     const { name } = ctx.params
-    const check = await getDocs(query(collection(db, 'orders'), where('name', '==', name))).then((querySnapshot) => {
+    const check = await getDocs(query(collection(db, 'check'), where('name', '==', name))).then((querySnapshot) => {
       const data = querySnapshot.docs.map((x) => x.data())
       return data[0]
     })
