@@ -1,20 +1,30 @@
-import { config } from 'https://deno.land/x/dotenv/mod.ts'
-import { serve } from 'https://deno.land/std@0.155.0/http/server.ts'
-import * as bcrypt from 'https://deno.land/x/bcrypt/mod.ts'
-import 'https://deno.land/x/xhr@0.1.1/mod.ts'
-import { installGlobals } from 'https://deno.land/x/virtualstorage@0.1.0/mod.ts'
+// import { config } from 'https://deno.land/x/dotenv/mod.ts'
+// import { serve } from 'https://deno.land/std@0.155.0/http/server.ts'
+// import * as bcrypt from 'https://deno.land/x/bcrypt/mod.ts'
+// import 'https://deno.land/x/xhr@0.1.1/mod.ts'
+// import { installGlobals } from 'https://deno.land/x/virtualstorage@0.1.0/mod.ts'
 import { initializeApp } from 'https://cdn.skypack.dev/firebase@9.17.1/app'
-import { getAuth } from 'https://cdn.skypack.dev/firebase@9.17.1/auth'
-import { getFirestore } from 'https://cdn.skypack.dev/firebase@9.17.1/firestore'
-import { Application, Router, Status } from 'https://deno.land/x/oak@v7.7.0/mod.ts'
-import { virtualStorage } from 'https://deno.land/x/virtualstorage@0.1.0/middleware.ts'
-installGlobals()
+import { getAuth, signInWithEmailAndPassword, updateCurrentUser } from 'https://cdn.skypack.dev/firebase@9.17.1/auth'
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  where,
+  query,
+  addDoc
+} from 'https://cdn.skypack.dev/firebase@9.17.1/firestore'
+import { Application, Router, Status } from 'https://deno.land/x/oak@v11.1.0/mod.ts'
+// import { virtualStorage } from 'https://deno.land/x/virtualstorage@0.1.0/middleware.ts'
+// installGlobals()
 
-const configEnv = Deno.env.get('FIREBASE_CONFIG')
+const env_password = Deno.env.get('password')
+const FIREBASE_USERNAME = Deno.env.get('FIREBASE_USERNAME')
+const FIREBASE_PASSWORD = Deno.env.get('FIREBASE_PASSWORD')
+const FIREBASE_CONFIG = Deno.env.get('FIREBASE_CONFIG')
 
-if (configEnv) {
-  const firebaseConfig = JSON.parse(configEnv ?? '{}')
-  const firebaseApp = initializeApp(firebaseConfig, 'dubaiclub-2f11d')
+if (FIREBASE_CONFIG) {
+  const firebaseConfig = JSON.parse(FIREBASE_CONFIG ?? '{}')
+  const firebaseApp = initializeApp(firebaseConfig)
   const auth = getAuth(firebaseApp)
   const db = getFirestore(firebaseApp)
 
@@ -24,26 +34,51 @@ if (configEnv) {
 
   // Returns any songs in the collection
   router.get('/check', async (ctx) => {
-    const password = ctx.request.url.searchParams.get('password');
-    if(password !== Deno.env.get('password')) {
+    //console.log('1')
+    const password = ctx.request.url.searchParams.get('password')
+    // //console.log(password, env_password)
+    //console.log('2')
+    if (password !== env_password) {
       ctx.response.status = Status.Unauthorized
       return
     }
-    const querySnapshot = await db.collection('orders').get()
-    ctx.response.body = querySnapshot.docs.map((doc: any) => doc.data())
+    //console.log('3')
+    const queryRef = collection(db, 'orders')
+    //console.log('3.5')
+    const sampleData = await getDocs(queryRef).then((querySnapshot) => {
+      //console.log('3.6')
+      const data = querySnapshot.docs.map((x) => x.data())
+      //console.log('3.7')
+      return data
+    })
+    //console.log('4')
+    ctx.response.body = sampleData // querySnapshot.docs.map((doc) => doc.data())
+    //console.log('5')
     ctx.response.type = 'json'
+    //console.log('6')
   })
 
   // Returns the first document that matches the title
   router.get('/check/:name', async (ctx) => {
-    const password = ctx.request.url.searchParams.get('password');
-    if(password !== Deno.env.get('password')) {
+    //console.log('1')
+    const password = ctx.request.url.searchParams.get('password')
+    //console.log('2')
+    if (password !== env_password) {
       ctx.response.status = Status.Unauthorized
       return
     }
+    //console.log('3')
     const { name } = ctx.params
-    const querySnapshot = await db.collection('orders').where('name', '==', name).get()
-    const check = querySnapshot.docs.map((doc: any) => doc.data())[0]
+    //console.log('4')
+    const check = await getDocs(query(collection(db, 'orders'), where('name', '==', name))).then((querySnapshot) => {
+      //console.log('3.6')
+      const data = querySnapshot.docs.map((x) => x.data())
+      //console.log('3.7')
+      return data[0]
+    })
+    //console.log('5')
+    // const check = querySnapshot.docs.map((doc: any) => doc.data())[0]
+    //console.log('6')
     if (!check) {
       ctx.response.status = 404
       ctx.response.body = `The check titled "${ctx.params.name}" was not found.`
@@ -60,8 +95,8 @@ if (configEnv) {
 
   // Removes any songs with the same title and adds the new song
   router.post('/check', async (ctx) => {
-    const password = ctx.request.url.searchParams.get('password');
-    if(password !== Deno.env.get('password')) {
+    const password = ctx.request.url.searchParams.get('password')
+    if (password !== env_password) {
       ctx.response.status = Status.Unauthorized
       return
     }
@@ -73,39 +108,48 @@ if (configEnv) {
     if (!isCheck(check)) {
       ctx.throw(Status.BadRequest, 'Payload was not well formed')
     }
-    const querySnapshot = await db.collection('check').where('name', '==', check.name).get()
+    const querySnapshot = await getDocs(query(collection(db, 'check'), where('name', '==', check.name)))
     await Promise.all(querySnapshot.docs.map((doc: any) => doc.ref.delete()))
-    const checkRef = db.collection('check')
-    await checkRef.add(check)
+    await addDoc(collection(db, 'check'), check)
+    // await checkRef.add(check)
     ctx.response.status = Status.NoContent
   })
 
   const app = new Application()
-  app.use(virtualStorage())
+  // app.use(virtualStorage())
 
   app.use(async (ctx, next) => {
+    //console.log('a')
     const signedInUid = ctx.cookies.get('LOGGED_IN_UID')
+    //console.log('b')
     const signedInUser = signedInUid != null ? users.get(signedInUid) : undefined
-    if (!signedInUid || !signedInUser || !auth.currentUser) {
-      const creds = await auth.signInWithEmailAndPassword(
-        Deno.env.get('FIREBASE_USERNAME'),
-        Deno.env.get('FIREBASE_PASSWORD')
-      )
-      const { user } = creds
-      if (user) {
-        users.set(user.uid, user)
-        ctx.cookies.set('LOGGED_IN_UID', user.uid)
-      } else if (
-        signedInUser &&
-        signedInUid &&
-        typeof signedInUid === 'object' &&
-        'name' in signedInUid &&
-        // @ts-ignore
-        signedInUid.uid !== auth.currentUser?.uid
-      ) {
-        await auth.updateCurrentUser(signedInUser)
-      }
+    //console.log('c')
+    // //console.log(JSON.stringify(signedInUid), signedInUser)
+    // //console.log(JSON.stringify(auth.currentUser))
+    // if (!signedInUid || !signedInUser || !auth.currentUser) {
+    //console.log('d')
+    const creds = await signInWithEmailAndPassword(auth, FIREBASE_USERNAME, FIREBASE_PASSWORD)
+    //console.log('e')
+    const { user } = creds
+    //console.log('f')
+    if (user) {
+      //console.log('g')
+      users.set(user.uid, user)
+      //console.log('h')
+      ctx.cookies.set('LOGGED_IN_UID', user.uid)
+      //console.log('i')
+    } else if (
+      signedInUser &&
+      signedInUid &&
+      typeof signedInUid === 'object' &&
+      'name' in signedInUid &&
+      signedInUid !== auth.currentUser?.uid
+    ) {
+      //console.log('j')
+      await updateCurrentUser(auth, signedInUser)
     }
+    //console.log('k')
+    // }
     return next()
   })
 
@@ -136,7 +180,7 @@ if (configEnv) {
 
 //   try {
 //     const bodyJson = await body!.json()
-//     console.log('bodyJson', JSON.stringify(bodyJson))
+//     //console.log('bodyJson', JSON.stringify(bodyJson))
 //     const { name, password: reqPassword } = bodyJson
 //     if (bcrypt.compareSync(reqPassword, password)) {
 //       const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -179,7 +223,7 @@ if (configEnv) {
 //     //   }});
 //   }
 //   if (checkIdMatch && (isGET || isPUT)) {
-//     // console.log(checkMatch.pathname.groups.id);  => "id"
+//     // //console.log(checkMatch.pathname.groups.id);  => "id"
 //     // GET: check if bill exist
 //     // PUT: update check
 //     return new Response('not implemented')
