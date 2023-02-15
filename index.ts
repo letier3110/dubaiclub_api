@@ -12,7 +12,8 @@ import {
   getDocs,
   where,
   query,
-  addDoc
+  addDoc,
+  deleteDoc
 } from 'https://cdn.skypack.dev/firebase@9.17.1/firestore'
 import { Application, Router, Status } from 'https://deno.land/x/oak@v11.1.0/mod.ts'
 // import { virtualStorage } from 'https://deno.land/x/virtualstorage@0.1.0/middleware.ts'
@@ -110,7 +111,7 @@ if (FIREBASE_CONFIG) {
       ctx.throw(Status.BadRequest, 'Payload was not well formed')
     }
     const querySnapshot = await getDocs(query(collection(db, 'check'), where('name', '==', check.name)))
-    await Promise.all(querySnapshot.docs.map((doc: any) => doc.ref.delete()))
+    await Promise.all(querySnapshot.docs.map((doc: any) => deleteDoc(query(collection(db, 'check'), where('name', '==', doc.name)))))
     await addDoc(collection(db, 'check'), check)
     // await checkRef.add(check)
     ctx.response.status = Status.NoContent
