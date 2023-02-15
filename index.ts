@@ -61,12 +61,12 @@ if (FIREBASE_CONFIG) {
   // Returns the first document that matches the title
   router.get('/check/:name', async (ctx) => {
     //console.log('1')
-    const password = ctx.request.url.searchParams.get('password')
+    // const password = ctx.request.url.searchParams.get('password')
     //console.log('2')
-    if (password !== env_password) {
-      ctx.response.status = Status.Unauthorized
-      return
-    }
+    // if (password !== env_password) {
+    //   ctx.response.status = Status.Unauthorized
+    //   return
+    // }
     //console.log('3')
     const { name } = ctx.params
     //console.log('4')
