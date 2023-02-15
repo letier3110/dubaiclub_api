@@ -3,6 +3,7 @@
 // import * as bcrypt from 'https://deno.land/x/bcrypt/mod.ts'
 // import 'https://deno.land/x/xhr@0.1.1/mod.ts'
 // import { installGlobals } from 'https://deno.land/x/virtualstorage@0.1.0/mod.ts'
+import { oakCors } from "https://deno.land/x/cors/mod.ts";
 import { initializeApp } from 'https://cdn.skypack.dev/firebase@9.17.1/app'
 import { getAuth, signInWithEmailAndPassword, updateCurrentUser } from 'https://cdn.skypack.dev/firebase@9.17.1/auth'
 import {
@@ -117,6 +118,11 @@ if (FIREBASE_CONFIG) {
 
   const app = new Application()
   // app.use(virtualStorage())
+  app.use(
+    oakCors({
+      origin: "https://dubaiopen.club"
+    }),
+);
 
   app.use(async (ctx, next) => {
     //console.log('a')
