@@ -111,7 +111,9 @@ if (FIREBASE_CONFIG) {
       ctx.throw(Status.BadRequest, 'Payload was not well formed')
     }
     const querySnapshot = await getDocs(query(collection(db, 'check'), where('name', '==', check.name)))
-    await Promise.all(querySnapshot.docs.map((doc: any) => deleteDoc(query(collection(db, 'check'), where('name', '==', doc.name)))))
+    if(querySnapshot.docs.length > 0) {
+      await deleteDoc(query(collection(db, 'check'), where('name', '==', check.name)))
+    }
     await addDoc(collection(db, 'check'), check)
     // await checkRef.add(check)
     ctx.response.status = Status.NoContent
